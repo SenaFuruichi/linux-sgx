@@ -29,23 +29,25 @@
  *
  *)
 
+(* 
+    Dependency injection plugin to allow custom code generation
+    from EDL. CodeGen.ml calls into Plugin.available to check 
+    if a plugin available. If a plugin is available, then it calls 
+    Plugin.gen_edge_routines to generate custom code. 
+    Otherwise, it generates code for Intel(R) SGX  SDK.
+*)
 
-let _ =
-  let progname = Sys.argv.(0) in
-  let argc = Array.length Sys.argv in
-  let args = if argc = 1 then [||] else Array.sub Sys.argv 1 (argc-1) in
-  let cmd_params = Util.parse_cmdline progname (Array.to_list args) in
+type plugin = {
+    mutable available: bool;
+    mutable gen_edge_routines:
+         Ast.enclave_content -> Util.edger8r_params -> unit;
+}
 
-  let real_ast_handler fname =
-    try
-      CodeGen.gen_enclave_code (CodeGen.start_parsing fname) cmd_params
-    with
-      Failure s -> (Printf.eprintf "error: %s\n" s; exit (-1))
-  in
-    if cmd_params.Util.input_files = [] then Util.usage progname
-    else (
-      List.iter real_ast_handler cmd_params.Util.input_files;
-      print_string "success";
-      print_newline();
-      flush stdout
-    )
+(* Instance fields will be populated by Open Enclave *)
+let instance = {
+    available = false;
+    gen_edge_routines = fun ec ep -> Printf.printf "Plugin not loaded.\n"
+}
+
+let available () = instance.available
+let gen_edge_routines ec ep = instance.gen_edge_routines ec ep
