@@ -37,7 +37,7 @@ all: build | $(BUILD_DIR)
 
 .PHONY: build
 build:
-	ocamlbuild -cflags -ccopt,-fpie -lflags -runtime-variant,_pic,-ccopt,-pie,-ccopt -lflag "-Wl,-z,now"  -no-links -libs str,unix Edger8r.native
+	ocamlbuild -use-ocamlfind -pkg yaml -pkg str -cflags -ccopt,-fpie -lflags -runtime-variant,_pic,-ccopt,-pie,-ccopt -lflag "-Wl,-z,now" -no-links -libs unix Edger8r.native
 
 $(BUILD_DIR):
 	@$(MKDIR) $@

@@ -43,9 +43,4 @@ let _ =
       Failure s -> (Printf.eprintf "error: %s\n" s; exit (-1))
   in
     if cmd_params.Util.input_files = [] then Util.usage progname
-    else (
-      List.iter real_ast_handler cmd_params.Util.input_files;
-      print_string "success";
-      print_newline();
-      flush stdout
-    )
+    else List.iter real_ast_handler cmd_params.Util.input_files
