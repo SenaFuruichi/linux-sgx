@@ -1,0 +1,25 @@
+automaton:
+  states:
+    - 0
+    - 1
+    - 2
+    - 3
+  alphabet:
+    - srand_do
+    - rand_do
+  transitions:
+    0:
+      srand_do: 1
+      rand_do: 3
+    1:
+      srand_do: 1
+      rand_do: 2
+    2:
+      srand_do: 3
+      rand_do: 2
+    3:
+      srand_do: 3
+      rand_do: 3
+  start_state: 0
+  accept_state: 2
+  error_state: 3

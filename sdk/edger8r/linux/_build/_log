@@ -42,9 +42,33 @@ File "CodeGen.ml", line 376, characters 7-8:
 376 |      | _                   -> (false, "")
              ^
 Warning 11 [redundant-case]: this match case is unused.
-File "CodeGen.ml", line 2457, characters 8-19:
-2457 |        (Util.mk_seq 0 (List.length ec.tfunc_decls - 1))
-               ^^^^^^^^^^^
-Error: Unbound value Util.mk_seq
-Command exited with code 2.
-# Compilation unsuccessful.
+# Target: Edger8r.cmo, tags: { package(str), package(yaml), byte, compile, extension:cmo, extension:ml, file:Edger8r.cmo, file:Edger8r.ml, implem, ocaml, quiet }
+ocamlfind ocamlc -c -ccopt -fpie -package str -package yaml -o Edger8r.cmo Edger8r.ml
+# Target: Ast.cmx, tags: { package(str), package(yaml), compile, extension:cmx, extension:ml, file:Ast.cmx, file:Ast.ml, implem, native, ocaml, quiet }
+ocamlfind ocamlopt -c -ccopt -fpie -package str -package yaml -o Ast.cmx Ast.ml # cached
+# Target: Parser.ml.depends, tags: { package(str), package(yaml), extension:ml, file:Parser.ml, ocaml, ocamldep, quiet }
+ocamlfind ocamldep -package str -package yaml -modules Parser.ml > Parser.ml.depends # cached
+# Target: Util.cmx, tags: { package(str), package(yaml), compile, extension:cmx, extension:ml, file:Util.cmx, file:Util.ml, implem, native, ocaml, quiet }
+ocamlfind ocamlopt -c -ccopt -fpie -package str -package yaml -o Util.cmx Util.ml # cached
+# Target: Parser.cmx, tags: { package(str), package(yaml), compile, extension:cmx, extension:ml, file:Parser.cmx, file:Parser.ml, implem, native, ocaml, quiet }
+ocamlfind ocamlopt -c -ccopt -fpie -package str -package yaml -o Parser.cmx Parser.ml # cached
+# Target: Lexer.cmx, tags: { package(str), package(yaml), compile, extension:cmx, extension:ml, file:Lexer.cmx, file:Lexer.ml, implem, native, ocaml, quiet }
+ocamlfind ocamlopt -c -ccopt -fpie -package str -package yaml -o Lexer.cmx Lexer.ml # cached
+# Target: Plugin.cmx, tags: { package(str), package(yaml), compile, extension:cmx, extension:ml, file:Plugin.cmx, file:Plugin.ml, implem, native, ocaml, quiet }
+ocamlfind ocamlopt -c -ccopt -fpie -package str -package yaml -o Plugin.cmx Plugin.ml # cached
+# Target: Preprocessor.cmx, tags: { package(str), package(yaml), compile, extension:cmx, extension:ml, file:Preprocessor.cmx, file:Preprocessor.ml, implem, native, ocaml, quiet }
+ocamlfind ocamlopt -c -ccopt -fpie -package str -package yaml -o Preprocessor.cmx Preprocessor.ml # cached
+# Target: SimpleStack.cmx, tags: { package(str), package(yaml), compile, extension:cmx, extension:ml, file:SimpleStack.cmx, file:SimpleStack.ml, implem, native, ocaml, quiet }
+ocamlfind ocamlopt -c -ccopt -fpie -package str -package yaml -o SimpleStack.cmx SimpleStack.ml # cached
+# Target: CodeGen.cmx, tags: { package(str), package(yaml), compile, extension:cmx, extension:ml, file:CodeGen.cmx, file:CodeGen.ml, implem, native, ocaml, quiet }
+ocamlfind ocamlopt -c -ccopt -fpie -package str -package yaml -o CodeGen.cmx CodeGen.ml
++ ocamlfind ocamlopt -c -ccopt -fpie -package str -package yaml -o CodeGen.cmx CodeGen.ml
+File "CodeGen.ml", line 376, characters 7-8:
+376 |      | _                   -> (false, "")
+             ^
+Warning 11 [redundant-case]: this match case is unused.
+# Target: Edger8r.cmx, tags: { package(str), package(yaml), compile, extension:cmx, extension:ml, file:Edger8r.cmx, file:Edger8r.ml, implem, native, ocaml, quiet }
+ocamlfind ocamlopt -c -ccopt -fpie -package str -package yaml -o Edger8r.cmx Edger8r.ml
+# Target: Edger8r.native, tags: { package(str), package(yaml), dont_link_with, extension:native, file:Edger8r.native, link, native, ocaml, program, quiet }
+ocamlfind ocamlopt -runtime-variant _pic -ccopt -pie -ccopt -Wl,-z,now unix.cmxa -linkpkg -package str -package yaml Ast.cmx Util.cmx Parser.cmx Lexer.cmx Plugin.cmx Preprocessor.cmx SimpleStack.cmx CodeGen.cmx Edger8r.cmx -o Edger8r.native
+# Compilation successful.

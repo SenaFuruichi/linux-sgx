@@ -643,8 +643,7 @@
   *)
 
 (* NewInsert *)
- open Yaml
- 
+
  (* ファイル全体を読み込む関数 *)
  let read_file filename =
     let ic = open_in filename in
@@ -653,26 +652,36 @@
     close_in ic;
     s
  
- let alphabet_list =
-    let filename = "seed.yml" in
-    let yaml_string = read_file filename in
-    match Yaml.of_string yaml_string with
-    | Ok yaml ->
-       (* "automaton" キーにアクセス *)
-       (match Yaml.Util.find "automaton" yaml with
-       | Ok (Some automaton) ->
+let first_alphabet_element =
+  let open Yaml in
+  let filename = "seed.yml" in
+  let yaml_string = read_file filename in
+  match Yaml.of_string yaml_string with
+  | Ok yaml ->
+      (* "automaton" キーにアクセス *)
+      (match Yaml.Util.find "automaton" yaml with
+      | Ok (Some automaton) ->
           (* "alphabet" キーにアクセス *)
           (match Yaml.Util.find "alphabet" automaton with
           | Ok (Some alphabet) ->
-             (match alphabet with
-             | `A items -> items  (* リストを返す *)
-             | _ -> [])  (* alphabetがリストでない場合は空リストを返す *)
-          | _ -> [])  (* alphabetキーが見つからない場合は空リストを返す *)
-       | _ -> [])  (* automatonキーが見つからない場合は空リストを返す *)
-    | Error _ -> []  (* YAMLのパースに失敗した場合は空リストを返す *)
- 
- 
+              (match alphabet with
+              | `A (first :: _) ->  (* リストの先頭要素を取得 *)
+                  (match first with
+                  | `String s -> Some s  (* 文字列ならそれを返す *)
+                  | _ -> None)  (* 文字列でない場合は None *)
+              | _ -> None)  (* alphabet がリストでない場合は None *)
+          | _ -> None)  (* alphabet キーが見つからない場合は None *)
+      | _ -> None)  (* automaton キーが見つからない場合は None *)
+  | Error _ -> None  (* YAML のパースに失敗した場合は None *)
+
+ (* "alphabet" の要素数分繰り返す 
+              for j = 0 to alphabet_num - 1 do
+                  let now_alphabet = List.nth alphabet_list j in
+                  let now_alphabet_str = Yaml.to_string_exn now_alphabet in
+                  let now_alphabet_str_no_newline = String.concat "" (String.split_on_char '\n' now_alphabet_str) in
+ *)
  let alphabet_num =
+  let open Yaml in
     let filename = "seed.yml" in
     let yaml_string = read_file filename in
     match Yaml.of_string yaml_string with
@@ -692,6 +701,7 @@
     | Error _ -> 0  (* YAMLのパースに失敗した場合は0を返す *)
  
  let transitions_num =
+  let open Yaml in
     let filename = "seed.yml" in
     let yaml_string = read_file filename in
     match Yaml.of_string yaml_string with
@@ -713,8 +723,49 @@
 let create_result_buffer () =
   Buffer.create 1024
 
+let add_initialization result_buffer =
+   let filename = "seed.yml" in
+   let yaml_string = read_file filename in
+   match Yaml.of_string yaml_string with
+   | Ok yaml ->
+      (* "automaton" キーにアクセス *)
+      (match Yaml.Util.find "automaton" yaml with
+      | Ok (Some automaton) ->
+         
+         (* "start_state" キーにアクセス *)
+         (match Yaml.Util.find "start_state" automaton with
+         | Ok (Some start_state) -> 
+             let state_str = Yaml.to_string_exn start_state in
+             let state_str_no_newline = String.concat "" (String.split_on_char '\n' state_str) in
+             Buffer.add_string result_buffer (Printf.sprintf "int now_state = %s;\n" state_str_no_newline)
+         | Ok None -> Buffer.add_string result_buffer "'start_state' is missing or not a list\n"
+         | Error (`Msg err) -> Buffer.add_string result_buffer (Printf.sprintf "Error finding 'start_state': %s\n" err));
+        
+         (* "accept_state" キーにアクセス *)
+         (match Yaml.Util.find "accept_state" automaton with
+         | Ok (Some accept_state) -> 
+             let state_str = Yaml.to_string_exn accept_state in
+             let state_str_no_newline = String.concat "" (String.split_on_char '\n' state_str) in
+             Buffer.add_string result_buffer (Printf.sprintf "int accept_state = %s;\n" state_str_no_newline)
+         | Ok None -> Buffer.add_string result_buffer "'accept_state' is missing or not a list\n"
+         | Error (`Msg err) -> Buffer.add_string result_buffer (Printf.sprintf "Error finding 'accept_state': %s\n" err));
+
+         (* "error_state" キーにアクセス *)
+         (match Yaml.Util.find "error_state" automaton with
+         | Ok (Some error_state) -> 
+             let state_str = Yaml.to_string_exn error_state in
+             let state_str_no_newline = String.concat "" (String.split_on_char '\n' state_str) in
+             Buffer.add_string result_buffer (Printf.sprintf "int error_state = %s;\n" state_str_no_newline)
+         | Ok None -> Buffer.add_string result_buffer "'error_state' is missing or not a list\n"
+         | Error (`Msg err) -> Buffer.add_string result_buffer (Printf.sprintf "Error finding 'error_state': %s\n\n" err));
+
+     | Ok None -> Buffer.add_string result_buffer "Key 'automaton' not found\n"
+     | Error (`Msg err) -> Buffer.add_string result_buffer (Printf.sprintf "Error finding 'automaton': %s\n" err))
+ | Error (`Msg err) -> Buffer.add_string result_buffer (Printf.sprintf "Error parsing YAML: %s\n" err)
+
 (* バッファに内容を追加する関数 *)
-let add_to_result_buffer result_buffer =
+let add_to_result_buffer result_buffer (fname: string)=
+  let open Yaml in
   let filename = "seed.yml" in
   let yaml_string = read_file filename in
   match Yaml.of_string yaml_string with
@@ -722,60 +773,28 @@ let add_to_result_buffer result_buffer =
       (* "automaton" キーにアクセス *)
       (match Yaml.Util.find "automaton" yaml with
       | Ok (Some automaton) ->
-          (* "start_state" キーにアクセス *)
-          (match Yaml.Util.find "start_state" automaton with
-          | Ok (Some start_state) -> 
-              let state_str = Yaml.to_string_exn start_state in
-              let state_str_no_newline = String.concat "" (String.split_on_char '\n' state_str) in
-              Buffer.add_string result_buffer (Printf.sprintf "int now_state = %s;\n" state_str_no_newline)
-          | Ok None -> Buffer.add_string result_buffer "'start_state' is missing or not a list\n"
-          | Error (`Msg err) -> Buffer.add_string result_buffer (Printf.sprintf "Error finding 'start_state': %s\n" err));
-         
-          (* "accept_state" キーにアクセス *)
-          (match Yaml.Util.find "accept_state" automaton with
-          | Ok (Some accept_state) -> 
-              let state_str = Yaml.to_string_exn accept_state in
-              let state_str_no_newline = String.concat "" (String.split_on_char '\n' state_str) in
-              Buffer.add_string result_buffer (Printf.sprintf "int accept_state = %s;\n" state_str_no_newline)
-          | Ok None -> Buffer.add_string result_buffer "'accept_state' is missing or not a list\n"
-          | Error (`Msg err) -> Buffer.add_string result_buffer (Printf.sprintf "Error finding 'accept_state': %s\n" err));
-
-          (* "error_state" キーにアクセス *)
-          (match Yaml.Util.find "error_state" automaton with
-          | Ok (Some error_state) -> 
-              let state_str = Yaml.to_string_exn error_state in
-              let state_str_no_newline = String.concat "" (String.split_on_char '\n' state_str) in
-              Buffer.add_string result_buffer (Printf.sprintf "int error_state = %s;\n" state_str_no_newline)
-          | Ok None -> Buffer.add_string result_buffer "'error_state' is missing or not a list\n"
-          | Error (`Msg err) -> Buffer.add_string result_buffer (Printf.sprintf "Error finding 'error_state': %s\n\n" err));
 
           (* "transitions" キーにアクセス *)
           (match Yaml.Util.find "transitions" automaton with
           | Ok (Some transitions) -> 
-              (* "alphabet" の要素数分繰り返す *)
-              for j = 0 to alphabet_num - 1 do
-                  let now_alphabet = List.nth alphabet_list j in
-                  let now_alphabet_str = Yaml.to_string_exn now_alphabet in
-                  let now_alphabet_str_no_newline = String.concat "" (String.split_on_char '\n' now_alphabet_str) in
                   (* "transitions" の要素数分繰り返す *)
                   for i = 0 to transitions_num - 1 do
                       (match Yaml.Util.find (string_of_int i) transitions with
                       | Ok (Some num) ->
-                          (match Yaml.Util.find now_alphabet_str_no_newline num with
+                          (match Yaml.Util.find fname num with
                           | Ok (Some state) ->
                               let state_str = Yaml.to_string_exn state in
                               let state_str_no_newline = String.concat "" (String.split_on_char '\n' state_str) in
                               if i = 0 then
-                                  Buffer.add_string result_buffer (Printf.sprintf "if (now_state == %s) {\n\tnow_state = %s;\n}" (string_of_int i) state_str_no_newline)
+                                  Buffer.add_string result_buffer (Printf.sprintf "\tif (now_state == %s) {\n\t\tnow_state = %s;\n\t}" (string_of_int i) state_str_no_newline)
                               else
-                                  Buffer.add_string result_buffer (Printf.sprintf "else if (now_state == %s) {\n\tnow_state = %s;\n}" (string_of_int i) state_str_no_newline)
+                                  Buffer.add_string result_buffer (Printf.sprintf "else if (now_state == %s) {\n\t\tnow_state = %s;\n\t}" (string_of_int i) state_str_no_newline)
                           | Ok None -> Buffer.add_string result_buffer "'state' is missing or not a list\n"
                           | Error (`Msg err) -> Buffer.add_string result_buffer (Printf.sprintf "Error finding 'state': %s\n" err))
                       | Ok None -> Buffer.add_string result_buffer "'num' is missing or not a list\n"
                       | Error (`Msg err) -> Buffer.add_string result_buffer (Printf.sprintf "Error finding 'num': %s\n" err))
                   done;
-                  Buffer.add_string result_buffer "\n\nif (now_state == error_state) {\n\treturn SGX_ERROR_UNEXPECTED;\n}\n\n"
-              done;
+                  Buffer.add_string result_buffer "\n\n\tif (now_state == error_state) {\n\t\treturn SGX_ERROR_UNEXPECTED;\n\t}\n"
 
           | Ok None -> Buffer.add_string result_buffer "'error_state' is missing or not a list\n"
           | Error (`Msg err) -> Buffer.add_string result_buffer (Printf.sprintf "Error finding 'error_state': %s\n" err))
@@ -784,6 +803,17 @@ let add_to_result_buffer result_buffer =
       | Error (`Msg err) -> Buffer.add_string result_buffer (Printf.sprintf "Error finding 'automaton': %s\n" err))
   | Error (`Msg err) -> Buffer.add_string result_buffer (Printf.sprintf "Error parsing YAML: %s\n" err)
 
+  let initialization () =
+    let result_buffer = create_result_buffer () in  (* バッファを作成 *)
+    add_initialization result_buffer;  (* バッファに内容を追加 *)
+    let buffer_contents = Buffer.contents result_buffer in
+    sprintf "%s" buffer_contents  
+
+  let check_code (fname: string) =
+    let result_buffer = create_result_buffer () in  (* バッファを作成 *)
+    add_to_result_buffer result_buffer fname;  (* バッファに内容を追加 *)
+    let buffer_contents = Buffer.contents result_buffer in
+    sprintf "%s" buffer_contents  
 
  let gen_uproxy_com_proto (fd: Ast.func_decl) (prefix: string) =
    let retval_parm_str = gen_parm_retval fd.Ast.rtype in
@@ -877,7 +907,7 @@ let add_to_result_buffer result_buffer =
  #include <stddef.h>\n\
  #include \"sgx_edger8r.h\" /* for sgx_ocall etc. */\n\n" in
      grd_hdr ^ inc_exp ^ inclist ^ "\n" ^ common_macros
- 
+
  (* Generate trusted header for enclave *)
  let gen_trusted_header (ec: enclave_content) =
    let header_fname = get_theader_name ec.file_shortnm in
@@ -888,7 +918,7 @@ let add_to_result_buffer result_buffer =
    let comp_def_list   = List.map gen_comp_def ec.comp_defs in
    let func_proto_list = List.map gen_func_proto (tf_list_to_fd_list ec.tfunc_decls) in
    let func_tproxy_list= List.map gen_tproxy_proto (uf_list_to_fd_list ec.ufunc_decls) in
- 
+   
    let out_chan = open_out header_fname in
      output_string out_chan (guard_code ^ "\n");
      List.iter (fun s -> output_string out_chan (s ^ "\n")) comp_def_list;
@@ -1801,10 +1831,23 @@ let add_to_result_buffer result_buffer =
      str ^ if deep_copy then "\tsize_t i = 0;\n" else ""
  
  (* It generates trusted bridge code for a trusted function. *)
+ (* NewInsert *)
  let gen_func_tbridge (fd: Ast.func_decl) (dummy_var: string) =
-   let func_open = sprintf "static sgx_status_t SGX_CDECL %s(void* %s)\n{\n"
-                           (mk_tbridge_name fd.Ast.fname)
-                           ms_ptr_name in
+  let func_open = 
+    match first_alphabet_element with
+    | Some first_element when fd.Ast.fname = first_element ->
+        sprintf "%s\nstatic sgx_status_t SGX_CDECL %s(void* %s)\n{\n%s\n"
+          (initialization ())
+          (mk_tbridge_name fd.Ast.fname)
+          ms_ptr_name 
+          (check_code fd.Ast.fname)
+    | _ ->
+        sprintf "static sgx_status_t SGX_CDECL %s(void* %s)\n{\n%s\n"
+          (mk_tbridge_name fd.Ast.fname)
+          ms_ptr_name 
+          (check_code fd.Ast.fname)
+  in
+
    let local_vars = gen_tbridge_local_vars fd.Ast.plist ^
                     if fd.rtype <> Ast.Void
                       then sprintf "\t%s %s;\n" (Ast.get_tystr fd.rtype) (mk_in_var retval_name)
@@ -2249,12 +2292,6 @@ let add_to_result_buffer result_buffer =
    let fd = ufunc.Ast.uf_fdecl in
    let propagate_errno = ufunc.Ast.uf_propagate_errno in
    let func_open = sprintf "%s\n{\n" (gen_tproxy_proto fd) in
-
-     (* NewInsert *)
-    let result_buffer = create_result_buffer () in  (* バッファを作成 *)
-    add_to_result_buffer result_buffer;  (* バッファに内容を追加 *)
-    let buffer_contents = Buffer.contents result_buffer in
-    let formatted_string = sprintf "%s\n" buffer_contents in
 
    let local_vars = gen_tproxy_local_vars fd.Ast.plist in
    let ocalloc_ms_struct = gen_ocalloc_block fd.Ast.fname fd.Ast.plist ufunc.Ast.uf_is_switchless in
