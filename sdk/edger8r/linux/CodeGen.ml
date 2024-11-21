@@ -674,12 +674,6 @@ let first_alphabet_element =
       | _ -> None)  (* automaton キーが見つからない場合は None *)
   | Error _ -> None  (* YAML のパースに失敗した場合は None *)
 
- (* "alphabet" の要素数分繰り返す 
-              for j = 0 to alphabet_num - 1 do
-                  let now_alphabet = List.nth alphabet_list j in
-                  let now_alphabet_str = Yaml.to_string_exn now_alphabet in
-                  let now_alphabet_str_no_newline = String.concat "" (String.split_on_char '\n' now_alphabet_str) in
- *)
  let alphabet_num =
   let open Yaml in
     let filename = "seed.yml" in
@@ -815,6 +809,8 @@ let add_to_result_buffer result_buffer (fname: string)=
     let buffer_contents = Buffer.contents result_buffer in
     sprintf "%s" buffer_contents  
 
+
+    
  let gen_uproxy_com_proto (fd: Ast.func_decl) (prefix: string) =
    let retval_parm_str = gen_parm_retval fd.Ast.rtype in
  
